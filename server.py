@@ -14,6 +14,7 @@ from models import db, RequestedBatch
 app = Flask(__name__)
 CORS(app)
 
+# Vercel-compatible initialization
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL") or "sqlite:///fallback.db"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
@@ -22,7 +23,10 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 db.init_app(app)
 
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"DB creation skipped or failed: {e}")
 
 # Configuration
 API_URL = "https://application.utkarshapp.com/index.php/data_model"
