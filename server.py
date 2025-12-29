@@ -14,7 +14,7 @@ from models import db, RequestedBatch
 app = Flask(__name__)
 CORS(app)
 
-# Vercel-compatible initialization
+# Vercel-compatible initialization: Move config into app context
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL") or "sqlite:///fallback.db"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
@@ -22,11 +22,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 db.init_app(app)
 
-with app.app_context():
+# Create tables ONLY if they don't exist, and do it safely
+def ensure_db():
     try:
-        db.create_all()
+        with app.app_context():
+            db.create_all()
     except Exception as e:
-        print(f"DB creation skipped or failed: {e}")
+        print(f"Lazy DB init warning: {e}")
+
+# Call this at the start of routes that need DB
 
 # Configuration
 API_URL = "https://application.utkarshapp.com/index.php/data_model"
@@ -76,6 +80,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
 def load_requested_batches():
+    ensure_db()
     if not supabase:
         with app.app_context():
             batches = RequestedBatch.query.all()
@@ -90,6 +95,7 @@ def load_requested_batches():
         return []
 
 def save_batch_to_db(batch_id, title=None, course_name=None):
+    ensure_db()
     bid_str = str(batch_id)
     # Local DB update
     with app.app_context():
