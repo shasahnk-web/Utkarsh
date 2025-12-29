@@ -6,3 +6,5 @@ pycryptodome
 requests
 supabase
 python-dotenv
+greenlet
+gunicorn
