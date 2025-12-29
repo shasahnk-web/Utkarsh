@@ -14,21 +14,25 @@ from models import db, RequestedBatch
 app = Flask(__name__)
 CORS(app)
 
-# Vercel-compatible initialization: Move config into app context
+# Vercel-compatible initialization: DEFER ALL DB SETUP
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL") or "sqlite:///fallback.db"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
 }
-db.init_app(app)
 
-# Create tables ONLY if they don't exist, and do it safely
+_db_initialized = False
+
 def ensure_db():
-    try:
-        with app.app_context():
-            db.create_all()
-    except Exception as e:
-        print(f"Lazy DB init warning: {e}")
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            db.init_app(app)
+            with app.app_context():
+                db.create_all()
+            _db_initialized = True
+        except Exception as e:
+            print(f"Lazy DB init warning: {e}")
 
 # Call this at the start of routes that need DB
 
