@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utkarsh Premium Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .navbar {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 1rem 0;
+        }
+        .navbar-brand { font-weight: 700; letter-spacing: -0.5px; color: var(--primary) !important; }
+        
+        .card {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 24px;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .card-img-top { height: 180px; object-fit: cover; opacity: 0.9; }
+        .card-title { 
+            font-weight: 700; 
+            font-size: 1.1rem; 
+            margin-bottom: 0.5rem; 
+            color: #ffffff !important;
+            display: block;
+        }
+        .card-text { color: #cbd5e1 !important; }
+
+        .nav-tabs { border: none; gap: 8px; margin-bottom: 2rem; }
+        .nav-link {
+            border: none !important;
+            color: var(--text-dim) !important;
+            padding: 10px 24px;
+            border-radius: 12px !important;
+            background: rgba(255,255,255,0.03) !important;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .nav-link.active {
+            background: var(--primary) !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Premium Loader */
+        #loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(99, 102, 241, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .breadcrumb-item + .breadcrumb-item::before { color: var(--text-dim); }
+        .breadcrumb-item a { color: var(--primary); text-decoration: none; font-weight: 500; }
+        
+        .request-batch-btn {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s;
+            z-index: 1000;
+        }
+        .request-batch-btn:hover { transform: scale(1.1) rotate(90deg); }
+
+        .player-container { display: none; margin-top: 2rem; }
+        #videoPlayer { width: 100%; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .pdf-viewer { width: 100%; height: 75vh; border-radius: 16px; border: none; }
+        
+        .content-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        .content-item:hover { background: rgba(255,255,255,0.08); }
+        .item-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+        <p class="mt-4 font-monospace" style="color: var(--primary); letter-spacing: 2px;">LOADING UTKARSH PREMIUM</p>
+    </div>
+
+    <nav class="navbar navbar-dark sticky-top">
+        <div class="container">
+            <span class="navbar-brand h1 mb-0">UTKARSH<span style="color:white">PLAYER</span></span>
+            <div class="d-flex align-items-center flex-grow-1 mx-4">
+                <input type="text" id="searchInput" class="form-control form-control-sm rounded-pill bg-dark border-secondary text-white px-3" placeholder="Search by name or ID..." style="max-width: 300px;">
+            </div>
+            <div class="d-flex align-items-center">
+                <span id="loginStatus" class="small me-3" style="color: var(--text-dim)">Checking status...</span>
+                <button id="loginBtn" class="btn btn-outline-light btn-sm rounded-pill px-3">Refresh</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <ul class="nav nav-pills mb-4" id="mainTabs">
+            <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-tab="all">All Batches</button></li>
+            <li class="nav-item"><button class="nav-link rounded-pill px-4" data-tab="favorites">Favorites ❤️</button></li>
+        </ul>
+
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb" id="breadcrumbList">
+                <li class="breadcrumb-item"><a href="#" onclick="loadBatches(); return false;">Home</a></li>
+            </ol>
+        </nav>
+
+        <div id="content" class="row"></div>
+
+        <div id="batchContent" class="d-none">
+            <ul class="nav nav-tabs" id="contentTabs">
+                <li class="nav-item"><button class="nav-link active" data-type="videos">Videos</button></li>
+                <li class="nav-item"><button class="nav-link" data-type="pdfs">PDFs</button></li>
+                <li class="nav-item"><button class="nav-link" data-type="dpps">DPPs</button></li>
+            </ul>
+            <div id="tabItems"></div>
+        </div>
+
+        <div id="player" class="player-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 id="mediaTitle" class="h5 mb-0">Content Viewer</h3>
+                <button class="btn btn-secondary btn-sm rounded-pill" onclick="closePlayer()">Close Player</button>
+            </div>
+            <div id="mediaContainer"></div>
+        </div>
+    </div>
+
+    <button class="request-batch-btn" onclick="requestBatchPrompt()">+</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        // AES Decryption Logic ported from Python
+        const COMMON_KEY = CryptoJS.enc.Utf8.parse("%!^F&^$)&^$&*$^&");
+        const COMMON_IV = CryptoJS.enc.Utf8.parse("#*v$JvywJvyJDyvJ");
+        const STREAM_KEY = CryptoJS.enc.Utf8.parse("%!$!%_$&!%F)&^!^");
+        const STREAM_IV = CryptoJS.enc.Utf8.parse("#*y*#2yJ*#$wJv*v");
+        const key_chars = "%!F*&^$)_*%3f&B+";
+        const iv_chars = "#*$DJvyw2w%!_-$@";
+
+        let elements = {};
+        let allBatches = [];
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let currentBatchData = { videos: [], pdfs: [], dpps: [] };
+        let currentTab = 'all';
+
+        function decrypt(data, key, iv) {
+            try {
+                const decrypted = CryptoJS.AES.decrypt(data.split(":")[0], key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                return decrypted.toString(CryptoJS.enc.Utf8);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function decryptStream(enc) {
+            try {
+                const decrypted = CryptoJS.AES.decrypt(enc, STREAM_KEY, {
+                    iv: STREAM_IV,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                let plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+                let cleaned = "";
+                for (let i = 0; i < plaintext.length; i++) {
+                    try {
+                        JSON.parse(plaintext.substring(0, i + 1));
+                        cleaned = plaintext.substring(0, i + 1);
+                    } catch (e) {}
+                }
+                return cleaned;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function api(path, method = 'GET', body = null) {
+            showLoader(true);
+            try {
+                const options = { method };
+                if (body) {
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify(body);
+                }
+                const res = await fetch(path, options);
+                return await res.json();
+            } catch (e) {
+                return { status: false, error: 'API error' };
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        function showLoader(show) {
+            if (!elements.loader) return;
+            elements.loader.style.opacity = show ? '1' : '0';
+            elements.loader.style.pointerEvents = show ? 'all' : 'none';
+        }
+
+        async function performLogin() {
+            elements.status.textContent = 'Authenticating...';
+            const res = await api('/login', 'POST');
+            if (res.status) {
+                elements.status.textContent = 'Premium Active';
+                elements.status.style.color = 'var(--primary)';
+                loadBatches();
+            } else {
+                elements.status.textContent = 'Auth Failed';
+                elements.status.style.color = '#ef4444';
+            }
+        }
+
+        function updateBreadcrumb(items) {
+            elements.breadcrumb.innerHTML = '<li class="breadcrumb-item"><a href="#" onclick="loadBatches(); return false;">Home</a></li>';
+            items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'breadcrumb-item' + (index === items.length - 1 ? ' active' : '');
+                if (index === items.length - 1) {
+                    li.textContent = item.name;
+                } else {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.textContent = item.name;
+                    a.onclick = (e) => { e.preventDefault(); item.action(); };
+                    li.appendChild(a);
+                }
+                elements.breadcrumb.appendChild(li);
+            });
+        }
+
+        async function loadBatches() {
+            elements.player.style.display = 'none';
+            elements.batchContent.classList.add('d-none');
+            elements.content.style.display = 'flex';
+            updateBreadcrumb([]);
+            
+            const data = await api('/batches');
+            allBatches = (data && data.data) || [];
+            renderBatches();
+        }
+
+        function toggleFavorite(e, batchId) {
+            e.stopPropagation();
+            const index = favorites.indexOf(batchId.toString());
+            if (index > -1) favorites.splice(index, 1);
+            else favorites.push(batchId.toString());
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            renderBatches();
+        }
+
+        function renderBatches() {
+            const searchTerm = elements.search.value.toLowerCase();
+            let filtered = allBatches.filter(b => 
+                (b.title.toLowerCase().includes(searchTerm) || b.id.toString().includes(searchTerm))
+            );
+
+            if (currentTab === 'favorites') {
+                filtered = filtered.filter(b => favorites.includes(b.id.toString()));
+            }
+            
+            elements.content.innerHTML = filtered.map(b => {
+                const isFav = favorites.includes(b.id.toString());
+                return `<div class="col-md-4 col-lg-3">
+                    <div class="card h-100" onclick="loadBatchMaterial('${b.id}', '${b.title.replace(/'/g, "\\'")}')">
+                        <div style="position: relative;">
+                            <img src="${b.image || '/static/images/thumbnail.png'}" class="card-img-top" onerror="this.src='/static/images/thumbnail.png'">
+                            <div onclick="toggleFavorite(event, '${b.id}')" style="position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 1.5rem;">
+                                ${isFav ? '❤️' : '🤍'}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">${b.title}</h5>
+                            <p class="card-text small mb-0">${b.course_name || ''}</p>
+                            <div class="mt-2 d-flex justify-content-between align-items-center">
+                                <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">ID: ${b.id}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function loadBatchMaterial(batchId, batchName) {
+            updateBreadcrumb([{ name: batchName, action: () => loadBatchMaterial(batchId, batchName) }]);
+            elements.content.style.display = 'none';
+            elements.batchContent.classList.remove('d-none');
+            elements.tabItems.innerHTML = '<div class="text-center py-5"><div class="spinner mx-auto"></div><p class="text-dim mt-3">Extracting content...</p></div>';
+            
+            const data = await api('/batch/' + batchId + '/content');
+            if (data && data.status) {
+                currentBatchData = data.data;
+                renderTab('videos');
+            } else {
+                elements.tabItems.innerHTML = '<div class="text-center py-5 text-danger">Failed to load.</div>';
+            }
+        }
+
+        function renderTab(type) {
+            const items = currentBatchData[type] || [];
+            document.querySelectorAll('#contentTabs .nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type));
+            if (items.length === 0) {
+                elements.tabItems.innerHTML = `<div class="text-center py-5 text-dim">No ${type} found.</div>`;
+                return;
+            }
+            elements.tabItems.innerHTML = items.map(item => `<div class="content-item" onclick="playMedia('${encodeURIComponent(JSON.stringify(item))}')">
+                <div class="item-icon">${type === 'videos' ? '🎬' : '📄'}</div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 fw-semibold">${item.title}</h6>
+                </div>
+                <button class="btn btn-sm btn-primary rounded-pill">Open</button>
+            </div>`).join('');
+        }
+
+        function playMedia(encodedItem) {
+            const item = JSON.parse(decodeURIComponent(encodedItem));
+            elements.batchContent.classList.add('d-none');
+            elements.player.style.display = 'block';
+            elements.mediaContainer.innerHTML = '';
+            elements.title.textContent = item.title;
+            const url = item.url;
+            if (url.includes('.m3u8') || url.includes('.mp4')) {
+                const v = document.createElement('video'); v.controls = v.autoplay = true; v.id = 'videoPlayer';
+                elements.mediaContainer.appendChild(v);
+                if (Hls.isSupported() && url.includes('.m3u8')) { const h = new Hls(); h.loadSource(url); h.attachMedia(v); } else v.src = url;
+            } else {
+                const i = document.createElement('iframe'); i.className = 'pdf-viewer'; i.src = url;
+                elements.mediaContainer.appendChild(i);
+            }
+        }
+
+        function closePlayer() { elements.player.style.display = 'none'; elements.batchContent.classList.remove('d-none'); }
+
+        async function requestBatchPrompt() {
+            const id = prompt("Enter Course ID:");
+            if (id) {
+                const res = await api('/request_batch', 'POST', { batch_id: id });
+                if (res.status) { alert("Added!"); loadBatches(); }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            elements = {
+                content: document.getElementById('content'),
+                batchContent: document.getElementById('batchContent'),
+                tabItems: document.getElementById('tabItems'),
+                loader: document.getElementById('loader-overlay'),
+                player: document.getElementById('player'),
+                mediaContainer: document.getElementById('mediaContainer'),
+                breadcrumb: document.getElementById('breadcrumbList'),
+                title: document.getElementById('mediaTitle'),
+                status: document.getElementById('loginStatus'),
+                loginBtn: document.getElementById('loginBtn'),
+                search: document.getElementById('searchInput')
+            };
+            document.querySelectorAll('#contentTabs .nav-link').forEach(btn => btn.onclick = () => renderTab(btn.dataset.type));
+            document.querySelectorAll('#mainTabs .nav-link').forEach(btn => btn.onclick = () => {
+                document.querySelectorAll('#mainTabs .nav-link').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active'); currentTab = btn.dataset.tab; renderBatches();
+            });
+            elements.search.oninput = renderBatches;
+            elements.loginBtn.onclick = performLogin;
+            performLogin();
+        });
+
+        window.loadBatches = loadBatches; window.loadBatchMaterial = loadBatchMaterial;
+        window.closePlayer = closePlayer; window.requestBatchPrompt = requestBatchPrompt;
+        window.playMedia = playMedia;
+    </script>
+</body>
+</html>
