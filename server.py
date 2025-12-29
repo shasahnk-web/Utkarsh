@@ -14,7 +14,7 @@ from models import db, RequestedBatch
 app = Flask(__name__)
 CORS(app)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL") or "sqlite:///fallback.db"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -329,6 +329,7 @@ def get_batches():
             if rid_str in named_batches:
                 real_title = named_batches[rid_str]
                 batches.append({"id": rid_str, "title": real_title, "image": "/static/images/thumbnail.png", "course_name": "Requested Batch"})
+                # Important: Update the DB/Supabase with the real name found
                 save_batch_to_db(rid_str, title=real_title)
             elif saved_title:
                 batches.append({"id": rid_str, "title": saved_title, "image": "/static/images/thumbnail.png", "course_name": saved_course})
